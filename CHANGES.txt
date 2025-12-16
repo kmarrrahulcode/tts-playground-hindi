@@ -1,0 +1,55 @@
+TTS Playground - Recent Changes
+================================
+
+1. OUTPUT FOLDER ORGANIZATION
+   - All audio files now save to organized folders by default:
+     * XTTS-Hindi: output/xtts_hindi/
+     * Indri: output/indri/
+   - Can be disabled with use_default_output_dir=False parameter
+
+2. DOCUMENTATION CONSOLIDATION
+   - All documentation consolidated into single README.md
+   - Removed 13 separate .md files
+   - README.md now includes:
+     * Installation instructions
+     * Model comparison
+     * Usage examples
+     * Troubleshooting guide
+     * API reference
+     * Quick reference table
+
+3. INDRI VOICE CLONING CLARIFICATION
+   - Removed non-working voice cloning implementation
+   - Updated documentation to clarify Indri only supports pre-trained speakers
+   - Added 13 pre-trained speaker options
+   - For voice cloning, use XTTS-Hindi instead
+
+4. CODE IMPROVEMENTS
+   - Added use_default_output_dir parameter to both engines
+   - Automatic folder creation (output/xtts_hindi/ or output/indri/)
+   - Better error messages and warnings
+   - Improved docstrings
+
+5. EXAMPLES UPDATED
+   - examples/example_indri.py: Removed voice cloning, added long text example
+   - examples/example_xtts_hindi.py: Unchanged (voice cloning works)
+   - test_indri_corrected.py: Demonstrates correct Indri usage
+
+USAGE:
+------
+# Default behavior (saves to output/indri/)
+tts.synthesize(text="...", output_path="audio.wav")
+
+# Custom location (no output/ prefix)
+tts.synthesize(text="...", output_path="my_folder/audio.wav", use_default_output_dir=False)
+
+# Absolute path (always respected)
+tts.synthesize(text="...", output_path="C:/full/path/audio.wav")
+
+MIGRATION:
+----------
+If you have existing code, it will continue to work but files will now be saved to:
+- output/xtts_hindi/ (for XTTS)
+- output/indri/ (for Indri)
+
+To keep old behavior, add use_default_output_dir=False to your synthesize() calls.
