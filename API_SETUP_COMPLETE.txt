@@ -1,0 +1,178 @@
+TTS Playground REST API - Setup Complete
+========================================
+
+WHAT WAS CREATED:
+-----------------
+
+1. API Server (api/main.py)
+   - FastAPI-based REST API
+   - Supports both XTTS-Hindi and Indri models
+   - Automatic model initialization
+   - File upload for voice cloning
+   - Download generated audio files
+   - Cleanup endpoints
+
+2. Startup Script (api/start_api.py)
+   - Easy server startup
+   - Automatic path configuration
+   - Environment variable checks
+
+3. Test Suite (api/test_api.py)
+   - Automated API testing
+   - Tests all major endpoints
+   - Example usage patterns
+
+4. Web Client (api/example_client.html)
+   - Beautiful web interface
+   - Model selection
+   - Speaker selection (Indri)
+   - Voice file upload (XTTS)
+   - Audio playback
+   - No installation required
+
+5. Documentation (api/README_API.md)
+   - Complete API reference
+   - Usage examples (Python, cURL, PowerShell, JavaScript)
+   - Request/response schemas
+   - Error handling
+   - Deployment guide
+
+6. Requirements (api/requirements.txt)
+   - FastAPI
+   - Uvicorn
+   - Python-multipart
+   - Pydantic
+
+HOW TO USE:
+-----------
+
+1. Install API Dependencies:
+   
+   .\venv-indri\Scripts\Activate.ps1
+   pip install -r api/requirements.txt
+
+2. Start the Server:
+   
+   $env:HF_TOKEN="your_token_here"
+   cd api
+   python start_api.py
+
+3. Access the API:
+   
+   - API: http://localhost:8000
+   - Interactive Docs: http://localhost:8000/docs
+   - ReDoc: http://localhost:8000/redoc
+
+4. Use the Web Client:
+   
+   Open api/example_client.html in your browser
+
+5. Test the API:
+   
+   python api/test_api.py
+
+API ENDPOINTS:
+--------------
+
+GET  /                          - API information
+GET  /health                    - Health check
+GET  /models                    - List available models
+GET  /speakers                  - Get Indri speakers
+POST /synthesize                - Synthesize speech
+POST /synthesize-with-voice     - Voice cloning (XTTS)
+GET  /download/{model}/{file}   - Download audio file
+DELETE /cleanup/{model}         - Clean up files
+
+FEATURES:
+---------
+
+✅ Model Selection (XTTS-Hindi or Indri)
+✅ Pre-trained Speakers (Indri)
+✅ Voice Cloning (XTTS)
+✅ File Upload Support
+✅ Audio Download
+✅ Automatic Output Organization
+✅ Error Handling
+✅ Interactive Documentation
+✅ Web Client Interface
+✅ Batch Processing Ready
+✅ RESTful Design
+
+EXAMPLES:
+---------
+
+Python:
+-------
+import requests
+
+response = requests.post("http://localhost:8000/synthesize", json={
+    "text": "नमस्ते दोस्तों",
+    "model": "indri",
+    "speaker": "[spkr_68]",
+    "max_new_tokens": 4096
+})
+
+result = response.json()
+print(f"Audio: {result['output_path']}")
+
+cURL:
+-----
+curl -X POST "http://localhost:8000/synthesize" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "नमस्ते", "model": "indri"}'
+
+PowerShell:
+-----------
+$body = @{
+    text = "नमस्ते दोस्तों"
+    model = "indri"
+    speaker = "[spkr_68]"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8000/synthesize" `
+    -Method Post -ContentType "application/json" -Body $body
+
+NEXT STEPS:
+-----------
+
+1. Start the API server
+2. Open http://localhost:8000/docs for interactive testing
+3. Try the web client (api/example_client.html)
+4. Integrate with your applications
+5. See api/README_API.md for complete documentation
+
+DEPLOYMENT:
+-----------
+
+For production:
+- Use gunicorn with multiple workers
+- Add authentication (API keys)
+- Implement rate limiting
+- Use HTTPS
+- Set up monitoring
+- Configure CORS for web clients
+
+See api/README_API.md for deployment details.
+
+TROUBLESHOOTING:
+----------------
+
+Q: API won't start
+A: Make sure tts_playground is installed: pip install -e .
+
+Q: Model initialization fails
+A: Check HF_TOKEN is set and internet connection
+
+Q: Voice cloning doesn't work
+A: Use XTTS-Hindi model, not Indri
+
+Q: CORS errors in browser
+A: Add CORS middleware to api/main.py for production
+
+SUPPORT:
+--------
+
+- API Documentation: api/README_API.md
+- Main Documentation: README.md
+- Interactive Docs: http://localhost:8000/docs (when running)
+- Test Suite: python api/test_api.py

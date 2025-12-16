@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTS Playground - Web Client</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .audio-player {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        audio {
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .model-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .speaker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .speaker-option {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 TTS Playground</h1>
+        <p class="subtitle">Text-to-Speech Web Client</p>
+        
+        <div class="model-info" id="modelInfo">
+            Select a model to see information
+        </div>
+        
+        <form id="ttsForm">
+            <div class="form-group">
+                <label for="model">Model</label>
+                <select id="model" name="model" required>
+                    <option value="indri">Indri (Fast, Multiple Speakers)</option>
+                    <option value="xtts-hindi">XTTS-Hindi (Voice Cloning)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="text">Text to Synthesize</label>
+                <textarea id="text" name="text" required placeholder="Enter text in Hindi or English...">नमस्ते दोस्तों, यह टेक्स्ट टू स्पीच का उदाहरण है।</textarea>
+            </div>
+            
+            <div class="form-group" id="speakerGroup">
+                <label for="speaker">Speaker (Indri Only)</label>
+                <select id="speaker" name="speaker">
+                    <option value="[spkr_68]">🇮🇳 👨 Hindi Book Reader</option>
+                    <option value="[spkr_70]">🇮🇳 👨 Motivational Speaker</option>
+                    <option value="[spkr_53]">🇮🇳 👩 Recipe Reciter</option>
+                    <option value="[spkr_67]">🇺🇸 👨 US Influencer</option>
+                    <option value="[spkr_63]">🇬🇧 👨 UK Book Reader</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="voiceFileGroup" style="display: none;">
+                <label for="voiceFile">Voice Sample (XTTS Only - 3-10 seconds)</label>
+                <input type="file" id="voiceFile" name="voiceFile" accept="audio/*">
+            </div>
+            
+            <div class="form-group">
+                <label for="maxTokens">Max Tokens (for longer text)</label>
+                <select id="maxTokens" name="maxTokens">
+                    <option value="2048">2048 (Short text)</option>
+                    <option value="4096" selected>4096 (Medium text)</option>
+                    <option value="8192">8192 (Long text)</option>
+                </select>
+            </div>
+            
+            <button type="submit" id="submitBtn">🎵 Generate Speech</button>
+        </form>
+        
+        <div class="status" id="status"></div>
+        
+        <div class="audio-player" id="audioPlayer">
+            <h3>Generated Audio:</h3>
+            <audio id="audio" controls></audio>
+            <p id="audioInfo"></p>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:8000';
+        const form = document.getElementById('ttsForm');
+        const modelSelect = document.getElementById('model');
+        const speakerGroup = document.getElementById('speakerGroup');
+        const voiceFileGroup = document.getElementById('voiceFileGroup');
+        const statusDiv = document.getElementById('status');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioElement = document.getElementById('audio');
+        const audioInfo = document.getElementById('audioInfo');
+        const submitBtn = document.getElementById('submitBtn');
+        const modelInfo = document.getElementById('modelInfo');
+        
+        // Model information
+        const modelDescriptions = {
+            'indri': '✨ Fast synthesis with 13 pre-trained speakers. Supports English, Hindi, and code-mixing.',
+            'xtts-hindi': '🎭 High-quality voice cloning. Upload a 3-10 second voice sample to clone any voice.'
+        };
+        
+        // Update UI based on selected model
+        modelSelect.addEventListener('change', function() {
+            const model = this.value;
+            modelInfo.textContent = modelDescriptions[model];
+            
+            if (model === 'xtts-hindi') {
+                speakerGroup.style.display = 'none';
+                voiceFileGroup.style.display = 'block';
+            } else {
+                speakerGroup.style.display = 'block';
+                voiceFileGroup.style.display = 'none';
+            }
+        });
+        
+        // Initialize
+        modelInfo.textContent = modelDescriptions['indri'];
+        
+        // Show status message
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+        }
+        
+        // Hide status message
+        function hideStatus() {
+            statusDiv.style.display = 'none';
+        }
+        
+        // Handle form submission
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            hideStatus();
+            audioPlayer.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Generating...';
+            
+            const model = modelSelect.value;
+            const text = document.getElementById('text').value;
+            const speaker = document.getElementById('speaker').value;
+            const maxTokens = parseInt(document.getElementById('maxTokens').value);
+            const voiceFile = document.getElementById('voiceFile').files[0];
+            
+            try {
+                let response;
+                
+                if (model === 'xtts-hindi' && voiceFile) {
+                    // Voice cloning
+                    const formData = new FormData();
+                    formData.append('text', text);
+                    formData.append('model', model);
+                    formData.append('voice_file', voiceFile);
+                    formData.append('language', 'hi');
+                    
+                    response = await fetch(`${API_URL}/synthesize-with-voice`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                } else {
+                    // Regular synthesis
+                    response = await fetch(`${API_URL}/synthesize`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            text: text,
+                            model: model,
+                            speaker: speaker,
+                            max_new_tokens: maxTokens
+                        })
+                    });
+                }
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to generate speech');
+                }
+                
+                const result = await response.json();
+                
+                // Show success message
+                showStatus(`✅ Speech generated successfully! (${(result.file_size / 1024).toFixed(2)} KB)`, 'success');
+                
+                // Load and play audio
+                const audioUrl = `${API_URL}/download/${result.model_used}/${result.output_path.split('/').pop()}`;
+                audioElement.src = audioUrl;
+                audioInfo.textContent = `File: ${result.output_path}`;
+                audioPlayer.style.display = 'block';
+                
+            } catch (error) {
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🎵 Generate Speech';
+            }
+        });
+    </script>
+</body>
+</html>

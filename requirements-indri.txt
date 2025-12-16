@@ -1,0 +1,18 @@
+# TTS Playground Requirements - Indri Only
+# Compatible with Python 3.9 - 3.11
+# Note: Indri requires transformers >= 4.46.0 which conflicts with XTTS
+
+# PyTorch (CPU version)
+torch>=2.0.0
+torchaudio>=2.0.0
+
+# Audio processing
+numpy>=1.24.0
+soundfile>=0.12.0
+
+# HuggingFace - Indri requires newer transformers for MimiModel
+huggingface-hub>=0.19.0
+transformers>=4.46.0
+
+# Note: This environment is NOT compatible with XTTS
+# Use separate virtual environments for XTTS and Indri
