@@ -6,7 +6,7 @@
 
 ```powershell
 # Activate your environment
-.\venv-indri\Scripts\Activate.ps1
+.\venv\Scripts\Activate.ps1
 
 # Install API requirements
 pip install -r api/requirements.txt
@@ -21,8 +21,7 @@ $env:HF_TOKEN="your_huggingface_token_here"
 ### Step 3: Start the Server (30 seconds)
 
 ```powershell
-cd api
-python start_api.py
+python api/start_api.py
 ```
 
 You should see:
@@ -39,9 +38,10 @@ API Docs: http://localhost:8000/docs
 **Option A: Use the Web Client**
 
 1. Open `api/example_client.html` in your browser
-2. Enter text: "नमस्ते दोस्तों"
-3. Click "Generate Speech"
-4. Listen to the audio!
+2. Select model: "xtts-hindi"
+3. Enter text: "नमस्ते दोस्तों"
+4. Click "Generate Speech"
+5. Listen to the audio!
 
 **Option B: Use Interactive Docs**
 
@@ -52,8 +52,7 @@ API Docs: http://localhost:8000/docs
    ```json
    {
      "text": "नमस्ते दोस्तों",
-     "model": "indri",
-     "speaker": "[spkr_68]"
+     "model": "xtts-hindi"
    }
    ```
 5. Click "Execute"
@@ -65,8 +64,7 @@ import requests
 
 response = requests.post("http://localhost:8000/synthesize", json={
     "text": "नमस्ते दोस्तों",
-    "model": "indri",
-    "speaker": "[spkr_68]"
+    "model": "xtts-hindi"
 })
 
 print(response.json())
@@ -77,7 +75,7 @@ print(response.json())
 ```bash
 curl -X POST "http://localhost:8000/synthesize" \
   -H "Content-Type: application/json" \
-  -d '{"text": "नमस्ते दोस्तों", "model": "indri"}'
+  -d '{"text": "नमस्ते दोस्तों", "model": "xtts-hindi"}'
 ```
 
 ## That's It!
@@ -86,9 +84,9 @@ Your TTS API is now running and ready to use!
 
 ## Next Steps
 
-- **Explore Models**: Try both "indri" and "xtts-hindi"
-- **Try Speakers**: Use different speakers with Indri
-- **Voice Cloning**: Upload a voice sample with XTTS
+- **Explore Models**: Try both "xtts-hindi" and "indri"
+- **Voice Cloning**: Upload a voice sample with XTTS for custom voices
+- **Try Speakers**: Use different speakers with Indri model
 - **Read Docs**: Check `api/README_API.md` for complete documentation
 - **Integrate**: Use the API in your applications
 
