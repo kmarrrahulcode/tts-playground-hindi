@@ -49,6 +49,18 @@ def _get_f5_hindi():
         ) from e
 
 
+def _get_vibevoice_hindi():
+    """Lazy import for VibeVoiceHindiTTS"""
+    try:
+        from tts_playground.vibevoice_hindi import VibeVoiceHindiTTS
+        return VibeVoiceHindiTTS
+    except ImportError as e:
+        raise ImportError(
+            "VibeVoiceHindiTTS requires vibevoice. Install with: "
+            "pip install vibevoice @ git+https://github.com/vibevoice-community/VibeVoice.git"
+        ) from e
+
+
 # Registry of available TTS engines (using lazy loaders)
 TTS_ENGINES = {
     "xtts-hindi": _get_xtts_hindi,
@@ -59,6 +71,8 @@ TTS_ENGINES = {
     "kokoro-hindi": _get_kokoro,
     "f5-hindi": _get_f5_hindi,
     "f5_hindi": _get_f5_hindi,
+    "vibevoice-hindi": _get_vibevoice_hindi,
+    "vibevoice_hindi": _get_vibevoice_hindi,
 }
 
 

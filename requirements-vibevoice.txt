@@ -1,0 +1,22 @@
+# Requirements for VibeVoice Hindi TTS
+# Use with venv-vibevoice virtual environment
+
+# VibeVoice community fork
+vibevoice @ git+https://github.com/vibevoice-community/VibeVoice.git
+
+# Core dependencies
+torch>=2.0.0
+transformers>=4.40.0
+soundfile>=0.12.0
+numpy>=1.24.0
+huggingface_hub>=0.20.0
+accelerate>=0.25.0
+
+# Audio processing
+scipy>=1.10.0
+librosa>=0.10.0
+
+# API dependencies (if running API)
+fastapi>=0.100.0
+uvicorn>=0.22.0
+python-multipart>=0.0.6

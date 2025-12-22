@@ -95,7 +95,7 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 class TTSRequest(BaseModel):
     """Request model for TTS synthesis"""
     text: str = Field(..., description="Text to convert to speech")
-    model: str = Field("indic-parler", description="Model: 'xtts-hindi', 'indic-parler', 'kokoro', or 'f5-hindi'")
+    model: str = Field("indic-parler", description="Model: 'xtts-hindi', 'indic-parler', 'kokoro', 'f5-hindi', or 'vibevoice-hindi'")
     output_filename: Optional[str] = Field(None, description="Output filename")
     language: Optional[str] = Field("hi", description="Language code (for XTTS)")
     use_default_output_dir: Optional[bool] = Field(True, description="Use output/model_name/ folder")
@@ -103,6 +103,9 @@ class TTSRequest(BaseModel):
     voice: Optional[str] = Field(None, description="Voice ID for Kokoro (hf_alpha, hf_beta, hm_omega, hm_psi)")
     speed: Optional[float] = Field(1.0, description="Speech speed for Kokoro (0.5-2.0)")
     ref_text: Optional[str] = Field(None, description="Reference audio transcript for F5-Hindi")
+    speaker: Optional[str] = Field(None, description="Speaker ID for VibeVoice Hindi (hi-Priya_woman, hi-Raj_man, etc.)")
+    cfg_scale: Optional[float] = Field(1.3, description="CFG scale for VibeVoice (1.0-2.0)")
+    seed: Optional[int] = Field(None, description="Random seed for reproducibility")
 
 
 class TTSResponse(BaseModel):
@@ -141,10 +144,10 @@ async def root():
     return {
         "name": "TTS Playground API",
         "version": "1.0.0",
-        "models": ["xtts-hindi", "indic-parler", "kokoro", "f5-hindi"],
+        "models": ["xtts-hindi", "indic-parler", "kokoro", "f5-hindi", "vibevoice-hindi"],
         "endpoints": {
             "POST /synthesize": "Synthesize speech from text",
-            "POST /synthesize-with-voice": "Synthesize with voice cloning (XTTS, F5-Hindi)",
+            "POST /synthesize-with-voice": "Synthesize with voice cloning (XTTS, F5-Hindi, VibeVoice)",
             "GET /models": "List available models",
             "GET /speakers": "Get speakers/voices for a model",
             "GET /voices": "Get voice descriptions (Indic Parler)",
@@ -161,7 +164,8 @@ async def health_check():
             "xtts-hindi": "xtts-hindi" in engines,
             "indic-parler": "indic-parler" in engines,
             "kokoro": "kokoro" in engines,
-            "f5-hindi": "f5-hindi" in engines
+            "f5-hindi": "f5-hindi" in engines,
+            "vibevoice-hindi": "vibevoice-hindi" in engines
         }
     }
 
@@ -196,6 +200,13 @@ async def list_models():
             languages=["hi"],
             features=["voice_cloning", "high_quality", "24khz"],
             initialized="f5-hindi" in engines
+        ),
+        ModelInfo(
+            name="vibevoice-hindi",
+            description="VibeVoice Hindi 1.5B - Frontier TTS with voice cloning and multi-speaker support",
+            languages=["hi"],
+            features=["voice_cloning", "multi_speaker", "long_form", "expressive", "1.5B_params"],
+            initialized="vibevoice-hindi" in engines
         )
     ]
 
@@ -260,21 +271,35 @@ async def get_speakers(model: str = "kokoro"):
             "note": "F5-Hindi uses voice cloning. Upload your own voice file via /synthesize-with-voice endpoint.",
             "total": 0
         }
+    elif model == "vibevoice-hindi":
+        return {
+            "model": "vibevoice-hindi",
+            "voices": {
+                "hi-Priya_woman": "Hindi Female (Priya) - Calm, clear voice",
+                "hi-Raj_man": "Hindi Male (Raj) - Professional tone",
+                "hi-Ananya_woman": "Hindi Female (Ananya) - Expressive voice",
+                "hi-Vikram_man": "Hindi Male (Vikram) - Deep, authoritative",
+            },
+            "note": "VibeVoice supports both built-in speakers and voice cloning via /synthesize-with-voice endpoint.",
+            "total": 4
+        }
     else:
         raise HTTPException(status_code=400, detail=f"Unknown model: {model}")
 
 
 def get_or_initialize_engine(model_name: str):
-    if model_name not in ["xtts-hindi", "indic-parler", "kokoro", "f5-hindi"]:
+    if model_name not in ["xtts-hindi", "indic-parler", "kokoro", "f5-hindi", "vibevoice-hindi"]:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid model: {model_name}. Choose 'xtts-hindi', 'indic-parler', 'kokoro', or 'f5-hindi'"
+            detail=f"Invalid model: {model_name}. Choose 'xtts-hindi', 'indic-parler', 'kokoro', 'f5-hindi', or 'vibevoice-hindi'"
         )
     
     if model_name not in engines:
         try:
             print(f"Initializing {model_name} model...")
-            engines[model_name] = get_tts_engine(model_name, device="cpu")
+            # Use CUDA for vibevoice-hindi by default (optimized for T4 GPU)
+            device = "cuda" if model_name == "vibevoice-hindi" else "cpu"
+            engines[model_name] = get_tts_engine(model_name, device=device)
             engines[model_name].initialize()
             print(f"{model_name} model initialized successfully")
         except Exception as e:
@@ -311,6 +336,13 @@ async def synthesize_speech(request: TTSRequest):
                 synth_params["voice"] = request.voice
             if request.speed:
                 synth_params["speed"] = request.speed
+        elif request.model == "vibevoice-hindi":
+            if request.speaker:
+                synth_params["speaker"] = request.speaker
+            if request.cfg_scale:
+                synth_params["cfg_scale"] = request.cfg_scale
+            if request.seed is not None:
+                synth_params["seed"] = request.seed
         
         result_path = tts.synthesize(**synth_params)
         file_size = Path(result_path).stat().st_size if Path(result_path).exists() else None
@@ -335,12 +367,14 @@ async def synthesize_with_voice(
     output_filename: Optional[str] = Form(None),
     language: str = Form("hi"),
     use_default_output_dir: bool = Form(True),
-    ref_text: Optional[str] = Form(None)
+    ref_text: Optional[str] = Form(None),
+    cfg_scale: float = Form(1.3),
+    seed: Optional[int] = Form(None)
 ):
-    if model not in ["xtts-hindi", "f5-hindi"]:
+    if model not in ["xtts-hindi", "f5-hindi", "vibevoice-hindi"]:
         raise HTTPException(
             status_code=400,
-            detail="Voice cloning only supported with 'xtts-hindi' or 'f5-hindi' models."
+            detail="Voice cloning only supported with 'xtts-hindi', 'f5-hindi', or 'vibevoice-hindi' models."
         )
     
     try:
@@ -370,6 +404,10 @@ async def synthesize_with_voice(
         elif model == "f5-hindi":
             if ref_text:
                 synth_params["ref_text"] = ref_text
+        elif model == "vibevoice-hindi":
+            synth_params["cfg_scale"] = cfg_scale
+            if seed is not None:
+                synth_params["seed"] = seed
         
         result_path = tts.synthesize(**synth_params)
         
@@ -404,8 +442,8 @@ async def download_file(model: str, filename: str):
 async def cleanup_outputs(model: str):
     try:
         if model == "all":
-            models = ["xtts_hindi", "indic_parler", "kokoro", "f5_hindi"]
-        elif model in ["xtts-hindi", "indic-parler", "kokoro", "f5-hindi"]:
+            models = ["xtts_hindi", "indic_parler", "kokoro", "f5_hindi", "vibevoice_hindi"]
+        elif model in ["xtts-hindi", "indic-parler", "kokoro", "f5-hindi", "vibevoice-hindi"]:
             models = [model.replace("-", "_")]
         else:
             raise HTTPException(status_code=400, detail="Invalid model")
