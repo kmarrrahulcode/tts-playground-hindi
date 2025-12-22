@@ -322,7 +322,21 @@ Each model has specific dependency requirements. Always use the corresponding vi
 
 ## License
 
-MIT License
+This repository's **code** is licensed under the MIT License.
+
+**Important**: The TTS models used in this project have their own licenses. Please review each model's license before use:
+
+| Model | License | Links |
+|-------|---------|-------|
+| VibeVoice Hindi 1.5B | MIT | [HuggingFace](https://huggingface.co/tarun7r/vibevoice-hindi-1.5B) · [GitHub](https://github.com/vibevoice-community/VibeVoice) |
+| F5-Hindi | CC-BY-NC-4.0 | [HuggingFace](https://huggingface.co/SPRINGLab/F5-Hindi-24KHz) |
+| XTTS-Hindi | CPML | [HuggingFace](https://huggingface.co/Abhinay45/XTTS-Hindi-finetuned) · [Coqui TTS](https://github.com/coqui-ai/TTS) |
+| Indic Parler TTS | Apache 2.0 | [HuggingFace](https://huggingface.co/ai4bharat/indic-parler-tts) |
+| Kokoro | Apache 2.0 | [HuggingFace](https://huggingface.co/hexgrad/Kokoro-82M) |
+
+Please ensure compliance with each model's license terms for your use case.
+
+---
 
 ## Contributing
 
