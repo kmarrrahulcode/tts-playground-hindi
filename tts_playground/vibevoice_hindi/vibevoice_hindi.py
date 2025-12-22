@@ -142,17 +142,20 @@ class VibeVoiceHindiTTS(TTSBase):
             if not voice_file:
                 voice_file = self._default_speaker_wav
             
-            # Prepare speaker name for the model
-            speaker_name = speaker or self.DEFAULT_SPEAKER
-            
             # Process inputs
             with torch.no_grad():
-                # Format text with speaker tag
-                formatted_text = f"[{speaker_name}]: {text}"
+                # VibeVoice expects format: "Speaker 1: text" (regex: ^Speaker\s+(\d+)\s*:\s*(.*)$)
+                formatted_text = f"Speaker 1: {text}"
                 
                 # Use processor to prepare inputs
+                # Pass voice_samples if we have a reference audio
+                voice_samples = None
+                if voice_file and Path(voice_file).exists():
+                    voice_samples = [voice_file]
+                
                 inputs = self._processor(
                     text=formatted_text,
+                    voice_samples=voice_samples,
                     return_tensors="pt"
                 )
                 
