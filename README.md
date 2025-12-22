@@ -9,7 +9,7 @@ A reusable Python module for Text-to-Speech with support for multiple TTS engine
 - 🇮🇳 **Hindi Support**: Optimized for Hindi text-to-speech
 - 💻 **CPU Optimized**: Designed to run efficiently on CPU
 - 🔄 **Reusable**: Can be easily integrated into other projects
-- 📁 **Organized Output**: Automatically saves files to `output/xtts_hindi/` or `output/indri/`
+- 📁 **Organized Output**: Automatically saves files to `output/xtts_hindi/`, `output/indri/`, or `output/kokoro/`
 
 ## Quick Start
 
@@ -17,7 +17,7 @@ A reusable Python module for Text-to-Speech with support for multiple TTS engine
 from tts_playground import get_tts_engine
 
 # Create TTS engine
-tts = get_tts_engine("xtts-hindi", device="cpu")  # or "indri"
+tts = get_tts_engine("xtts-hindi", device="cpu")  # or "indri", "kokoro"
 tts.initialize()
 
 # Synthesize speech (saves to output/xtts_hindi/ by default)
@@ -84,6 +84,22 @@ pip install -e .
 $env:HF_TOKEN="your_token_here"
 ```
 
+### Option 3: Kokoro TTS (Fast, Lightweight)
+
+**Note**: Requires Python 3.10-3.12 (not compatible with Python 3.13+).
+
+```powershell
+# Create separate environment with Python 3.11
+py -3.11 -m venv venv-kokoro
+
+# Activate
+.\venv-kokoro\Scripts\Activate.ps1
+
+# Install
+pip install -r requirements-kokoro.txt
+pip install -e .
+```
+
 ---
 
 ## Supported Models
@@ -113,6 +129,21 @@ $env:HF_TOKEN="your_token_here"
 | **Output Folder** | `output/indri/` |
 
 **Indri Speakers**: `[spkr_63]` 🇬🇧 👨, `[spkr_67]` 🇺🇸 👨, `[spkr_68]` 🇮🇳 👨 (default), `[spkr_70]` 🇮🇳 👨, `[spkr_53]` 🇮🇳 👩, and 8 more.
+
+### Kokoro TTS
+
+| Feature | Details |
+|---------|---------|
+| **Model** | [hexgrad/Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) |
+| **Languages** | Hindi (and others) |
+| **Voice Cloning** | ❌ No |
+| **Pre-trained Speakers** | ✅ Yes (4 Hindi voices) |
+| **Speed** | Very Fast (82M lightweight model) |
+| **Environment** | `venv-kokoro` |
+| **Output Folder** | `output/kokoro/` |
+| **Python** | 3.10-3.12 only |
+
+**Kokoro Hindi Voices**: `hf_alpha` 👩 (default), `hf_beta` 👩, `hm_omega` 👨, `hm_psi` 👨
 
 ---
 
@@ -167,6 +198,29 @@ texts = ["पहला वाक्य।", "दूसरा वाक्य।"
 output_paths = tts.synthesize_batch(
     texts=texts,
     output_dir="batch_output",  # Saves to output/indri/batch_output/
+)
+```
+
+### Kokoro: Fast Hindi TTS
+
+```python
+from tts_playground import get_tts_engine
+
+# Available voices: hf_alpha, hf_beta (female), hm_omega, hm_psi (male)
+tts = get_tts_engine("kokoro", device="cpu", voice="hf_alpha")
+
+# Synthesize Hindi text
+tts.synthesize(
+    text="नमस्ते, आप कैसे हैं?",
+    output_path="kokoro_hindi.wav",  # Saves to output/kokoro/kokoro_hindi.wav
+    speed=1.0  # Adjust speed (0.5-2.0)
+)
+
+# Try different voice
+tts.synthesize(
+    text="यह पुरुष आवाज़ है।",
+    output_path="male_voice.wav",
+    voice="hm_omega"  # Male voice
 )
 ```
 
@@ -248,6 +302,11 @@ deactivate
 .\venv-indri\Scripts\Activate.ps1
 $env:HF_TOKEN="your_token_here"
 python examples/example_indri.py
+
+# Use Kokoro
+deactivate
+.\venv-kokoro\Scripts\Activate.ps1
+python examples/example_kokoro_hindi.py
 ```
 
 ### Check Active Environment
@@ -307,7 +366,7 @@ If you have Python 3.12 or 3.13:
 tts.synthesize(
     text="Long text here...",
     output_path="output.wav",
-    max_new_tokens=4096  # Default: 2048
+    max_new_tokens=8192  # Default: 8192
 )
 ```
 
@@ -344,7 +403,7 @@ get_tts_engine(engine_name: str, **kwargs) -> TTSBase
 Creates a TTS engine instance.
 
 **Parameters:**
-- `engine_name`: `"xtts-hindi"` or `"indri"`
+- `engine_name`: `"xtts-hindi"`, `"indri"`, or `"kokoro"`
 - `device`: `"cpu"` or `"cuda"` (default: `"cpu"`)
 - `hf_token`: HuggingFace token (optional, reads from `HF_TOKEN` env var)
 
@@ -380,7 +439,7 @@ tts.synthesize(
     text: str,
     output_path: Optional[str] = None,
     speaker: Optional[str] = None,  # e.g., "[spkr_68]"
-    max_new_tokens: int = 2048,  # Increase for longer text
+    max_new_tokens: int = 8192,  # Increase for longer text
     temperature: float = 1.0,
     use_default_output_dir: bool = True,  # Saves to output/indri/
 )
@@ -388,6 +447,23 @@ tts.synthesize(
 # Get available speakers
 speakers = tts.get_available_speakers()
 # Returns: {"[spkr_68]": "🇮🇳 👨 book reader", ...}
+```
+
+### Kokoro Specific
+
+```python
+tts.synthesize(
+    text: str,
+    output_path: Optional[str] = None,
+    voice: Optional[str] = None,  # e.g., "hf_alpha", "hm_omega"
+    speed: float = 1.0,  # Speech speed (0.5-2.0)
+    use_default_output_dir: bool = True,  # Saves to output/kokoro/
+)
+
+# Get available Hindi voices
+voices = tts.get_available_voices()
+# Returns: {"hf_alpha": "Hindi Female Alpha", "hf_beta": "Hindi Female Beta", 
+#           "hm_omega": "Hindi Male Omega", "hm_psi": "Hindi Male Psi"}
 ```
 
 ---
@@ -398,21 +474,26 @@ speakers = tts.get_available_speakers()
 TTS-Playground/
 ├── output/                    # Generated audio files (auto-created)
 │   ├── xtts_hindi/           # XTTS-Hindi outputs
-│   └── indri/                # Indri outputs
+│   ├── indri/                # Indri outputs
+│   └── kokoro/               # Kokoro outputs
 ├── tts_playground/           # Main module
 │   ├── __init__.py
 │   ├── base.py               # Base TTS interface
 │   ├── factory.py            # Factory for creating engines
 │   ├── xtts_hindi/           # XTTS-Hindi implementation
-│   └── indri/                # Indri implementation
+│   ├── indri/                # Indri implementation
+│   └── kokoro/               # Kokoro implementation
 ├── examples/                 # Example scripts
 │   ├── example_xtts_hindi.py
 │   ├── example_indri.py
+│   ├── example_kokoro_hindi.py
 │   └── voice_cloning_example.py
 ├── venv/                     # XTTS environment
 ├── venv-indri/               # Indri environment
+├── venv-kokoro/              # Kokoro environment
 ├── requirements.txt          # XTTS dependencies
 ├── requirements-indri.txt    # Indri dependencies
+├── requirements-kokoro.txt   # Kokoro dependencies
 └── README.md                 # This file
 ```
 
@@ -430,6 +511,10 @@ python examples/example_xtts_hindi.py
 # Indri examples
 .\venv-indri\Scripts\Activate.ps1
 python examples/example_indri.py
+
+# Kokoro examples
+.\venv-kokoro\Scripts\Activate.ps1
+python examples/example_kokoro_hindi.py
 ```
 
 ---
@@ -444,6 +529,7 @@ python examples/example_indri.py
 TTS_ENGINES = {
     "xtts-hindi": XTTSHindi,
     "indri": IndriTTS,
+    "kokoro": KokoroTTS,
     "new-engine": NewEngine,  # Add here
 }
 ```
@@ -474,18 +560,20 @@ Contributions welcome! Please submit a Pull Request.
 
 ## Quick Reference
 
-| Task | XTTS-Hindi | Indri |
-|------|-----------|-------|
-| **Voice Cloning** | ✅ `speaker_wav="my_voice.wav"` | ❌ Not supported |
-| **Pre-trained Speakers** | ❌ Not available | ✅ `speaker="[spkr_68]"` |
-| **Languages** | Hindi only | English, Hindi, Code-mixing |
-| **Speed** | Slower | Faster |
-| **Environment** | `venv` | `venv-indri` |
-| **Output Folder** | `output/xtts_hindi/` | `output/indri/` |
-| **Long Text** | Works by default | Use `max_new_tokens=4096` |
+| Task | XTTS-Hindi | Indri | Kokoro |
+|------|-----------|-------|--------|
+| **Voice Cloning** | ✅ `speaker_wav="my_voice.wav"` | ❌ Not supported | ❌ Not supported |
+| **Pre-trained Speakers** | ❌ Not available | ✅ `speaker="[spkr_68]"` | ✅ `voice="hf_alpha"` |
+| **Languages** | Hindi only | English, Hindi, Code-mixing | Hindi |
+| **Speed** | Slower | Faster | Very Fast |
+| **Model Size** | Large | 350M | 82M |
+| **Environment** | `venv` | `venv-indri` | `venv-kokoro` |
+| **Python Version** | 3.9-3.11 | 3.9-3.11 | 3.10-3.12 |
+| **Output Folder** | `output/xtts_hindi/` | `output/indri/` | `output/kokoro/` |
 
 ---
 
 **For voice cloning**: Use XTTS-Hindi  
 **For fast synthesis with variety**: Use Indri  
-**For code-mixing**: Use Indri
+**For code-mixing**: Use Indri  
+**For fastest Hindi TTS**: Use Kokoro

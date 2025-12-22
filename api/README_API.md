@@ -1,27 +1,32 @@
 # TTS Playground REST API
 
-REST API for Text-to-Speech synthesis using XTTS-Hindi and Indri models.
+REST API for Text-to-Speech synthesis using XTTS-Hindi, Indri, and Kokoro models.
 
 ## Quick Start
 
 ### 1. Install API Dependencies
 
 ```powershell
-# Activate your environment (venv or venv-indri)
+# Activate your environment (venv, venv-indri, or venv-kokoro)
 .\venv-indri\Scripts\Activate.ps1
 
 # Install API requirements
 pip install -r api/requirements.txt
 
-# Set HuggingFace token
+# Set HuggingFace token (not needed for Kokoro)
 $env:HF_TOKEN="your_token_here"
 ```
 
 ### 2. Start the API Server
 
 ```powershell
-cd api
-python start_api.py
+# For Indri or XTTS
+python api/start_api.py
+
+# For Kokoro (use venv-kokoro)
+.\venv-kokoro\Scripts\Activate.ps1
+python api/start_api.py --engine kokoro
+# Or use: start_kokoro_api.bat
 ```
 
 The API will be available at:
@@ -52,7 +57,8 @@ GET /health
   "status": "healthy",
   "models_initialized": {
     "xtts-hindi": false,
-    "indri": true
+    "indri": true,
+    "kokoro": false
   }
 }
 ```
@@ -76,13 +82,13 @@ GET /models
 ]
 ```
 
-### Get Speakers (Indri Only)
+### Get Speakers/Voices
 
 ```bash
 GET /speakers?model=indri
 ```
 
-**Response:**
+**Response (Indri):**
 ```json
 {
   "model": "indri",
@@ -92,6 +98,24 @@ GET /speakers?model=indri
     ...
   },
   "total": 13
+}
+```
+
+```bash
+GET /speakers?model=kokoro
+```
+
+**Response (Kokoro):**
+```json
+{
+  "model": "kokoro",
+  "voices": {
+    "hf_alpha": "Hindi Female Alpha",
+    "hf_beta": "Hindi Female Beta",
+    "hm_omega": "Hindi Male Omega",
+    "hm_psi": "Hindi Male Psi"
+  },
+  "total": 4
 }
 ```
 
@@ -118,6 +142,33 @@ Content-Type: application/json
   "output_path": "output/indri/hello.wav",
   "model_used": "indri",
   "file_size": 123456
+}
+```
+
+### Synthesize with Kokoro
+
+```bash
+POST /synthesize
+Content-Type: application/json
+
+{
+  "text": "नमस्ते, आप कैसे हैं?",
+  "model": "kokoro",
+  "output_filename": "kokoro_hello.wav",
+  "voice": "hf_beta",
+  "speed": 1.0,
+  "use_default_output_dir": false
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Speech synthesized successfully",
+  "output_path": "kokoro_hello.wav",
+  "model_used": "kokoro",
+  "file_size": 98765
 }
 ```
 
@@ -160,7 +211,7 @@ Returns the audio file.
 DELETE /cleanup/{model}
 ```
 
-- `model`: "indri", "xtts-hindi", or "all"
+- `model`: "indri", "xtts-hindi", "kokoro", or "all"
 
 **Response:**
 ```json
@@ -190,6 +241,17 @@ response = requests.post("http://localhost:8000/synthesize", json={
 
 result = response.json()
 print(f"Audio saved to: {result['output_path']}")
+
+# Synthesize with Kokoro (fast Hindi TTS)
+response = requests.post("http://localhost:8000/synthesize", json={
+    "text": "नमस्ते, आप कैसे हैं?",
+    "model": "kokoro",
+    "voice": "hf_alpha",
+    "speed": 1.0
+})
+
+result = response.json()
+print(f"Kokoro audio saved to: {result['output_path']}")
 
 # Download the file
 audio_response = requests.get(f"http://localhost:8000/download/indri/hello.wav")
@@ -222,6 +284,16 @@ curl -X POST "http://localhost:8000/synthesize-with-voice" \
   -F "model=xtts-hindi" \
   -F "voice_file=@my_voice.wav" \
   -F "language=hi"
+
+# Synthesize with Kokoro
+curl -X POST "http://localhost:8000/synthesize" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "नमस्ते, आप कैसे हैं?",
+    "model": "kokoro",
+    "voice": "hf_alpha",
+    "speed": 1.0
+  }'
 ```
 
 ### PowerShell
@@ -288,10 +360,12 @@ fetch('http://localhost:8000/synthesize-with-voice', {
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `text` | string | Yes | - | Text to convert to speech |
-| `model` | string | Yes | "indri" | "xtts-hindi" or "indri" |
+| `model` | string | Yes | "indri" | "xtts-hindi", "indri", or "kokoro" |
 | `output_filename` | string | No | Auto-generated | Output filename |
 | `speaker` | string | No | "[spkr_68]" | Speaker ID (Indri only) |
+| `voice` | string | No | "hf_alpha" | Voice ID (Kokoro only) |
 | `language` | string | No | "hi" | Language code (XTTS only) |
+| `speed` | float | No | 1.0 | Speech speed 0.5-2.0 (Kokoro only) |
 | `max_new_tokens` | int | No | 2048 | Max tokens (Indri only) |
 | `temperature` | float | No | 1.0 | Sampling temperature |
 | `use_default_output_dir` | bool | No | true | Use output/model/ folder |
@@ -331,6 +405,7 @@ The API returns standard HTTP status codes:
 
 - **First Request**: Slower (model initialization)
 - **Subsequent Requests**: Faster (model cached in memory)
+- **Kokoro**: ~1-2 seconds per request (fastest)
 - **Indri**: ~2-5 seconds per request
 - **XTTS**: ~5-10 seconds per request
 - **Voice Cloning**: Additional 1-2 seconds for file upload

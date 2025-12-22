@@ -1,0 +1,20 @@
+# TTS Playground Requirements - Indic Parler TTS
+# Compatible with Python 3.9 - 3.13
+# Note: Requires transformers==4.46.1 (strict version)
+
+# Parler TTS library
+parler-tts==0.2.3
+
+# PyTorch
+torch>=2.0.0
+torchaudio>=2.0.0
+
+# Audio processing
+numpy>=1.24.0
+soundfile>=0.12.0
+
+# HuggingFace (version pinned by parler-tts)
+# transformers>=4.46.1,<=4.46.1
+
+# Note: This environment is NOT compatible with XTTS or Indri
+# Use separate virtual environments
