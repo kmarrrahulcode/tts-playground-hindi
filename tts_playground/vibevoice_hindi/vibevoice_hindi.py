@@ -53,6 +53,7 @@ class VibeVoiceHindiTTS(TTSBase):
             import torch
             from vibevoice.modular import VibeVoiceForConditionalGenerationInference
             from vibevoice.processor import VibeVoiceProcessor
+            from huggingface_hub import hf_hub_download
             
             # Load model
             print("Loading model...")
@@ -76,11 +77,41 @@ class VibeVoiceHindiTTS(TTSBase):
             self._voices_dir = Path("demo/voices")
             self._voices_dir.mkdir(parents=True, exist_ok=True)
             
-            # Look for default speaker reference
+            # Download voice files from the model repo
+            print("Downloading voice files...")
+            voice_files = ["hi-Priya_woman.wav", "demo.wav"]
+            for vf in voice_files:
+                try:
+                    local_path = hf_hub_download(
+                        repo_id=self.model_name,
+                        filename=vf
+                    )
+                    # Copy to voices dir with simple name
+                    import shutil
+                    dest_path = self._voices_dir / vf
+                    if not dest_path.exists():
+                        shutil.copy(local_path, dest_path)
+                    print(f"  Downloaded: {vf} -> {dest_path}")
+                except Exception as e:
+                    print(f"  Could not download {vf}: {e}")
+            
+            # Set default speaker wav
+            default_voice = self._voices_dir / "hi-Priya_woman.wav"
+            if default_voice.exists():
+                self._default_speaker_wav = str(default_voice)
+                print(f"Default voice: {self._default_speaker_wav}")
+            else:
+                # Fallback to demo.wav
+                demo_voice = self._voices_dir / "demo.wav"
+                if demo_voice.exists():
+                    self._default_speaker_wav = str(demo_voice)
+                    print(f"Default voice: {self._default_speaker_wav}")
+            
+            # Also check workspace for user's voice files
             for ref in ["my_voice.wav", "reference.wav", "speaker.wav"]:
                 if Path(ref).exists():
                     self._default_speaker_wav = str(Path(ref).absolute())
-                    print(f"Found default speaker reference: {ref}")
+                    print(f"Using user voice file: {ref}")
                     break
             
             self._initialized = True
@@ -133,29 +164,31 @@ class VibeVoiceHindiTTS(TTSBase):
                 torch.manual_seed(seed)
                 np.random.seed(seed)
             
-            # Determine voice file for cloning
+            # Determine voice file for cloning - REQUIRED for VibeVoice
             voice_file = speaker_wav
             if not voice_file and speaker:
+                # Check for speaker-specific voice file
                 voice_path = self._voices_dir / f"{speaker}.wav"
                 if voice_path.exists():
                     voice_file = str(voice_path)
             if not voice_file:
                 voice_file = self._default_speaker_wav
             
+            if not voice_file or not Path(voice_file).exists():
+                raise ValueError(
+                    "VibeVoice requires a reference voice file. "
+                    "Provide speaker_wav parameter or ensure voice files are downloaded."
+                )
+            
             # Process inputs
             with torch.no_grad():
                 # VibeVoice expects format: "Speaker 1: text" (regex: ^Speaker\s+(\d+)\s*:\s*(.*)$)
                 formatted_text = f"Speaker 1: {text}"
                 
-                # Use processor to prepare inputs
-                # Pass voice_samples if we have a reference audio
-                voice_samples = None
-                if voice_file and Path(voice_file).exists():
-                    voice_samples = [voice_file]
-                
+                # Use processor to prepare inputs with voice samples
                 inputs = self._processor(
                     text=formatted_text,
-                    voice_samples=voice_samples,
+                    voice_samples=[voice_file],
                     return_tensors="pt"
                 )
                 
@@ -171,8 +204,10 @@ class VibeVoiceHindiTTS(TTSBase):
                     **kwargs
                 )
                 
-                # Extract audio
-                if hasattr(outputs, 'audio'):
+                # Extract audio from VibeVoiceGenerationOutput
+                if hasattr(outputs, 'speech_outputs') and outputs.speech_outputs:
+                    audio = outputs.speech_outputs[0]
+                elif hasattr(outputs, 'audio'):
                     audio = outputs.audio
                 elif hasattr(outputs, 'waveform'):
                     audio = outputs.waveform
@@ -181,13 +216,16 @@ class VibeVoiceHindiTTS(TTSBase):
                 else:
                     audio = outputs
                 
-                # Convert to numpy
+                # Convert to numpy float32 (soundfile doesn't support float16)
                 if torch.is_tensor(audio):
                     audio = audio.cpu().numpy()
                 
                 # Squeeze extra dimensions
                 while len(audio.shape) > 1 and audio.shape[0] == 1:
                     audio = audio.squeeze(0)
+                
+                # Convert to float32 if needed
+                audio = audio.astype(np.float32)
                 
                 # Normalize if needed
                 max_val = np.abs(audio).max()
