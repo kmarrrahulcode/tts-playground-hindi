@@ -41,7 +41,7 @@ def setup_environment():
     print("\n2. Installing system dependencies...")
     run_cmd("apt-get update && apt-get install -y ffmpeg", check=False)
     
-    # Install VibeVoice from community fork
+    # Install VibeVoice from community fork FIRST
     print("\n3. Installing VibeVoice...")
     run_cmd("pip install git+https://github.com/vibevoice-community/VibeVoice.git")
     
@@ -50,9 +50,9 @@ def setup_environment():
     run_cmd("pip install soundfile numpy huggingface_hub accelerate scipy librosa")
     run_cmd("pip install fastapi uvicorn python-multipart")
     
-    # Install tts-playground in editable mode
-    print("\n5. Installing tts-playground...")
-    run_cmd("pip install -e .")
+    # Install tts-playground WITHOUT deps (avoids TTS library conflict)
+    print("\n5. Installing tts-playground (no-deps)...")
+    run_cmd("pip install -e . --no-deps")
     
     # Create output directories
     print("\n6. Creating directories...")

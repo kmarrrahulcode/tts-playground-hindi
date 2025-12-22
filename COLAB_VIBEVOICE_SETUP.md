@@ -4,27 +4,30 @@
 
 ### Cell 1: Clone Repository
 ```python
-!git clone https://github.com/your-repo/tts-playground.git
-%cd tts-playground
+!git clone https://github.com/kmarrrahulcode/tts-playground-hindi.git
+%cd tts-playground-hindi
 ```
 
-### Cell 2: Install Dependencies
+### Cell 2: Install VibeVoice Dependencies
 ```python
-# Install VibeVoice from community fork
+# Install VibeVoice from community fork FIRST
 !pip install git+https://github.com/vibevoice-community/VibeVoice.git
 
 # Install other dependencies
 !pip install soundfile numpy huggingface_hub accelerate scipy librosa
 !pip install fastapi uvicorn python-multipart
 
-# Install tts-playground
-!pip install -e .
-
 # System dependencies
 !apt-get update && apt-get install -y ffmpeg
 ```
 
-### Cell 3: Test Basic Synthesis
+### Cell 3: Install TTS Playground (VibeVoice only)
+```python
+# Use --no-deps to avoid TTS library conflict
+!pip install -e . --no-deps
+```
+
+### Cell 4: Test Basic Synthesis
 ```python
 from tts_playground import get_tts_engine
 
@@ -42,23 +45,55 @@ from IPython.display import Audio
 Audio(output)
 ```
 
-### Cell 4: Voice Cloning (Optional)
+---
+
+## Alternative: One-Cell Setup
+
+```python
+# Complete setup in one cell
+!git clone https://github.com/kmarrrahulcode/tts-playground-hindi.git
+%cd tts-playground-hindi
+
+# Install VibeVoice first
+!pip install git+https://github.com/vibevoice-community/VibeVoice.git
+!pip install soundfile numpy huggingface_hub accelerate
+!apt-get update && apt-get install -y ffmpeg
+
+# Install playground without deps (avoids TTS library conflict)
+!pip install -e . --no-deps
+
+# Test
+from tts_playground import get_tts_engine
+tts = get_tts_engine("vibevoice-hindi", device="cuda")
+tts.initialize()
+output = tts.synthesize(text="नमस्ते", output_path="test.wav")
+
+from IPython.display import Audio
+Audio(output)
+```
+
+---
+
+## Voice Cloning
+
 ```python
 # Upload your voice file first
 from google.colab import files
 uploaded = files.upload()  # Upload my_voice.wav
 
 # Clone voice
-text = "यह मेरी आवाज़ की क्लोनिंग है।"
 output = tts.synthesize_with_voice(
-    text=text,
+    text="यह मेरी आवाज़ की क्लोनिंग है।",
     speaker_wav="my_voice.wav",
     output_path="cloned.wav"
 )
 Audio(output)
 ```
 
-### Cell 5: Multi-Speaker Conversation
+---
+
+## Multi-Speaker Conversation
+
 ```python
 dialogue = [
     {"speaker": "hi-Priya_woman", "text": "नमस्ते, कैसे हो?"},
@@ -74,75 +109,34 @@ Audio(output)
 
 ---
 
-## API Server in Colab
-
-### Cell 1: Start API with ngrok
-```python
-!pip install pyngrok
-
-from pyngrok import ngrok
-ngrok.set_auth_token("YOUR_NGROK_TOKEN")  # Get from ngrok.com
-
-# Start tunnel
-public_url = ngrok.connect(8000)
-print(f"API URL: {public_url}")
-print(f"Docs: {public_url}/docs")
-```
-
-### Cell 2: Run API Server
-```python
-%cd api
-!python start_api.py
-```
-
----
-
 ## Available Speakers
 
 | Speaker ID | Description |
 |------------|-------------|
-| `hi-Priya_woman` | Hindi Female (Priya) - Calm, clear voice |
-| `hi-Raj_man` | Hindi Male (Raj) - Professional tone |
-| `hi-Ananya_woman` | Hindi Female (Ananya) - Expressive voice |
-| `hi-Vikram_man` | Hindi Male (Vikram) - Deep, authoritative |
+| `hi-Priya_woman` | Hindi Female - Calm, clear voice |
+| `hi-Raj_man` | Hindi Male - Professional tone |
+| `hi-Ananya_woman` | Hindi Female - Expressive voice |
+| `hi-Vikram_man` | Hindi Male - Deep, authoritative |
 
 ---
 
-## API Endpoints
+## Troubleshooting
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/synthesize` | POST | Basic TTS with speaker selection |
-| `/synthesize-with-voice` | POST | Voice cloning |
-| `/speakers?model=vibevoice-hindi` | GET | List speakers |
-| `/health` | GET | Health check |
-
-### Example API Call
+### "No matching distribution found for TTS>=0.22.0"
+Use `--no-deps` flag:
 ```python
-import requests
+!pip install -e . --no-deps
+```
 
-response = requests.post(
-    f"{public_url}/synthesize",
-    json={
-        "text": "नमस्ते दुनिया",
-        "model": "vibevoice-hindi",
-        "speaker": "hi-Priya_woman"
-    }
-)
-print(response.json())
+### CUDA Out of Memory
+```python
+import torch
+torch.cuda.empty_cache()
 ```
 
 ---
 
-## Memory Usage (T4 GPU - 16GB)
-
-- Model loading: ~6-8 GB VRAM
+## Memory: T4 GPU (16GB)
+- Model: ~6-8 GB VRAM
 - Inference: ~2-4 GB additional
-- Recommended: Keep batch sizes small for long texts
-
-## Tips
-
-1. Use `torch.float16` (default) for memory efficiency
-2. Set `seed` parameter for reproducible outputs
-3. Adjust `cfg_scale` (1.0-2.0) for voice fidelity
-4. For voice cloning, use 5-15 second reference audio
+- Total: ~10-12 GB (fits on T4)
