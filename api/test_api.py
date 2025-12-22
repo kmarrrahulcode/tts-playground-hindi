@@ -41,7 +41,7 @@ def test_synthesize_indri():
         "model": "indri",
         "output_filename": "test_indri_api.wav",
         "speaker": "[spkr_68]",
-        "max_new_tokens": 2048
+        "max_new_tokens": 4096
     }
     
     response = requests.post(f"{BASE_URL}/synthesize", json=payload)
