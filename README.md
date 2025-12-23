@@ -21,13 +21,14 @@ TTS Playground provides a modular, extensible architecture for experimenting wit
 ```python
 from tts_playground import get_tts_engine
 
-# Initialize any supported model
-tts = get_tts_engine("vibevoice-hindi", device="cuda")
+# Initialize Kokoro - fast, lightweight Hindi TTS
+tts = get_tts_engine("kokoro", device="cpu")
 tts.initialize()
 
 # Generate speech
 tts.synthesize(
     text="नमस्ते, यह हिंदी टेक्स्ट टू स्पिच का उदाहरण है।",
+    voice="hm_psi",  # Hindi Female
     output_path="output.wav"
 )
 ```
@@ -71,51 +72,25 @@ pip install -e .
 
 ## Model Details
 
-### VibeVoice Hindi 1.5B
+### Kokoro TTS
 
-**Model**: [tarun7r/vibevoice-hindi-1.5B](https://huggingface.co/tarun7r/vibevoice-hindi-1.5B)
+**Model**: [hexgrad/Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M)
 
-A frontier TTS model fine-tuned for Hindi, built on Microsoft's VibeVoice architecture. Supports voice cloning, multi-speaker conversations, and long-form audio generation.
-
-```python
-tts = get_tts_engine("vibevoice-hindi", device="cuda")
-tts.initialize()
-
-# Built-in speakers
-tts.synthesize(text="नमस्ते", speaker="hi-Priya_woman", output_path="priya.wav")
-
-# Voice cloning
-tts.synthesize(text="नमस्ते", speaker_wav="my_voice.wav", output_path="cloned.wav")
-
-# Multi-speaker conversation
-dialogue = [
-    {"speaker": "hi-Priya_woman", "text": "नमस्ते, कैसे हो?"},
-    {"speaker": "hi-Raj_man", "text": "मैं ठीक हूं, धन्यवाद।"},
-]
-tts.synthesize_conversation(dialogue=dialogue, output_path="conversation.wav")
-```
-
-**Available Speakers**: `hi-Priya_woman`, `hi-Raj_man`, `hi-Ananya_woman`, `hi-Vikram_man`
-
----
-
-### F5-Hindi
-
-**Model**: [SPRINGLab/F5-Hindi-24KHz](https://huggingface.co/SPRINGLab/F5-Hindi-24KHz)
-
-High-quality voice cloning model optimized for Hindi at 24kHz sample rate.
+Lightweight, fast TTS model with multiple Hindi voice presets.
 
 ```python
-tts = get_tts_engine("f5-hindi", device="cuda")
+tts = get_tts_engine("kokoro", device="cpu")
 tts.initialize()
 
 tts.synthesize(
-    text="यह मेरी आवाज़ की क्लोनिंग है।",
-    speaker_wav="reference.wav",
-    ref_text="Reference audio transcript",  # Optional, improves quality
-    output_path="cloned.wav"
+    text="नमस्ते, आप कैसे हैं?",
+    voice="hf_alpha",  # Hindi Female
+    speed=1.0,
+    output_path="output.wav"
 )
 ```
+
+**Available Voices**: `hf_alpha` (Female), `hf_beta` (Female), `hm_omega` (Male), `hm_psi` (Male)
 
 ---
 
@@ -134,6 +109,26 @@ tts.synthesize(
     speaker_wav="my_voice.wav",  # 3-10 second sample
     language="hi",
     output_path="output.wav"
+)
+```
+
+---
+
+### F5-Hindi
+
+**Model**: [SPRINGLab/F5-Hindi-24KHz](https://huggingface.co/SPRINGLab/F5-Hindi-24KHz)
+
+High-quality voice cloning model optimized for Hindi at 24kHz sample rate.
+
+```python
+tts = get_tts_engine("f5-hindi", device="cuda")
+tts.initialize()
+
+tts.synthesize(
+    text="यह मेरी आवाज़ की क्लोनिंग है।",
+    speaker_wav="reference.wav",
+    ref_text="Reference audio transcript",  # Optional, improves quality
+    output_path="cloned.wav"
 )
 ```
 
@@ -160,25 +155,31 @@ tts.synthesize(
 
 ---
 
-### Kokoro TTS
+### VibeVoice Hindi 1.5B
 
-**Model**: [hexgrad/Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M)
+**Model**: [tarun7r/vibevoice-hindi-1.5B](https://huggingface.co/tarun7r/vibevoice-hindi-1.5B)
 
-Lightweight, fast TTS model with multiple Hindi voice presets.
+A frontier TTS model fine-tuned for Hindi, built on Microsoft's VibeVoice architecture. Supports voice cloning, multi-speaker conversations, and long-form audio generation.
 
 ```python
-tts = get_tts_engine("kokoro", device="cpu")
+tts = get_tts_engine("vibevoice-hindi", device="cuda")
 tts.initialize()
 
-tts.synthesize(
-    text="नमस्ते, आप कैसे हैं?",
-    voice="hf_alpha",  # Hindi Female
-    speed=1.0,
-    output_path="output.wav"
-)
+# Built-in speakers
+tts.synthesize(text="नमस्ते", speaker="hi-Priya_woman", output_path="priya.wav")
+
+# Voice cloning
+tts.synthesize(text="नमस्ते", speaker_wav="my_voice.wav", output_path="cloned.wav")
+
+# Multi-speaker conversation
+dialogue = [
+    {"speaker": "hi-Priya_woman", "text": "नमस्ते, कैसे हो?"},
+    {"speaker": "hi-Raj_man", "text": "मैं ठीक हूं, धन्यवाद।"},
+]
+tts.synthesize_conversation(dialogue=dialogue, output_path="conversation.wav")
 ```
 
-**Available Voices**: `hf_alpha` (Female), `hf_beta` (Female), `hm_omega` (Male), `hm_psi` (Male)
+**Available Speakers**: `hi-Priya_woman`, `hi-Raj_man`, `hi-Ananya_woman`, `hi-Vikram_man`
 
 ---
 

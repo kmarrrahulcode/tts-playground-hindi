@@ -28,7 +28,10 @@ class RequestResponseLoggingMiddleware(BaseHTTPMiddleware):
         headers = dict(request.headers)
         
         body = await request.body()
-        body_str = body.decode("utf-8") if body else ""
+        
+        # Check if this is a multipart/form-data request (file upload)
+        content_type = headers.get("content-type", "")
+        is_multipart = "multipart/form-data" in content_type
         
         print("\n" + "=" * 60)
         print(f"[{request_time}] RAW REQUEST")
@@ -36,12 +39,20 @@ class RequestResponseLoggingMiddleware(BaseHTTPMiddleware):
         print(f"Method: {method}")
         print(f"URL: {url}")
         print(f"Headers: {json.dumps({k: v for k, v in headers.items() if k.lower() not in ['authorization', 'cookie']}, indent=2)}")
-        if body_str:
-            try:
-                body_json = json.loads(body_str)
-                print(f"Body: {json.dumps(body_json, indent=2, ensure_ascii=False)}")
-            except json.JSONDecodeError:
-                print(f"Body: {body_str[:500]}{'...' if len(body_str) > 500 else ''}")
+        
+        if body:
+            if is_multipart:
+                print(f"Body: [multipart/form-data, {len(body)} bytes - binary content not logged]")
+            else:
+                try:
+                    body_str = body.decode("utf-8")
+                    try:
+                        body_json = json.loads(body_str)
+                        print(f"Body: {json.dumps(body_json, indent=2, ensure_ascii=False)}")
+                    except json.JSONDecodeError:
+                        print(f"Body: {body_str[:500]}{'...' if len(body_str) > 500 else ''}")
+                except UnicodeDecodeError:
+                    print(f"Body: [binary content, {len(body)} bytes]")
         print("=" * 60)
         
         async def receive():
@@ -369,7 +380,8 @@ async def synthesize_with_voice(
     use_default_output_dir: bool = Form(True),
     ref_text: Optional[str] = Form(None),
     cfg_scale: float = Form(1.3),
-    seed: Optional[int] = Form(None)
+    seed: Optional[int] = Form(None),
+    split_sentences: bool = Form(True)
 ):
     if model not in ["xtts-hindi", "f5-hindi", "vibevoice-hindi"]:
         raise HTTPException(
