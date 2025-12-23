@@ -10,11 +10,13 @@ TTS Playground provides a modular, extensible architecture for experimenting wit
 
 | Model | Parameters | Voice Cloning | Multi-Speaker | Speed | Best For |
 |-------|------------|---------------|---------------|-------|----------|
-| **VibeVoice Hindi** | 1.5B | ✅ | ✅ (4 speakers) | Medium | High-quality, expressive speech |
-| **F5-Hindi** | 151M | ✅ | ❌ | Medium | Voice cloning |
-| **XTTS-Hindi** | ~1B | ✅ | ❌ | Slow | Voice cloning |
-| **Indic Parler** | 880M | ❌ | ✅ (22 languages) | Medium | Multilingual Indian languages |
 | **Kokoro** | 82M | ❌ | ✅ (4 voices) | Fast | Lightweight, real-time |
+| **XTTS-Hindi** | ~1B | ✅ | ❌ | Slow | Voice cloning |
+| **F5-Hindi** | 151M | ✅ | ❌ | Medium | Voice cloning |
+| **Indic Parler** | 880M | ❌ | ✅ (22 languages) | Medium | Multilingual Indian languages |
+| **VibeVoice Hindi** | 1.5B | ✅ | ✅ (4 speakers) | Medium | High-quality, expressive speech |
+
+
 
 ## Quick Start
 
