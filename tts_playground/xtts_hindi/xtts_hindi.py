@@ -305,6 +305,7 @@ class XTTSHindi(TTSBase):
                    speaker_wav: Optional[Union[str, Path]] = None,
                    language: str = "hi",
                    use_default_output_dir: bool = True,
+                   split_sentences: bool = True,
                    **kwargs) -> Union[bytes, str]:
         """
         Synthesize speech from Hindi text
@@ -315,6 +316,7 @@ class XTTSHindi(TTSBase):
             speaker_wav: Optional path to reference speaker audio for voice cloning
             language: Language code (default: "hi" for Hindi)
             use_default_output_dir: If True, saves to output/xtts_hindi/ folder (default: True)
+            split_sentences: If True, splits text into sentences before synthesis (default: True)
             **kwargs: Additional parameters
             
         Returns:
@@ -355,6 +357,7 @@ class XTTSHindi(TTSBase):
                 file_path=str(output_path),
                 speaker_wav=speaker_wav,
                 language=language,
+                split_sentences=split_sentences,
                 **kwargs
             )
             
